@@ -3,8 +3,9 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { Navbar } from './components/Navbar';
 import { RiverMap } from './components/Map';
 import { StationSidebar } from './components/StationSidebar';
-import { fetchStations, fetchRegions } from './services/api';
-import type { AlertLevel } from './types';
+import { WebcamModal } from './components/WebcamModal';
+import { fetchStations, fetchRegions, fetchWebcams } from './services/api';
+import type { AlertLevel, WebcamFeature } from './types';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,6 +20,8 @@ const RiverMonitorDashboard: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<AlertLevel | 'all'>('all');
   const [selectedStationId, setSelectedStationId] = useState<number | null>(null);
+  const [showWebcams, setShowWebcams] = useState<boolean>(true);
+  const [selectedWebcam, setSelectedWebcam] = useState<WebcamFeature | null>(null);
 
   // 1. Fetch Regions
   const { data: regions = [] } = useQuery({
@@ -26,7 +29,17 @@ const RiverMonitorDashboard: React.FC = () => {
     queryFn: fetchRegions,
   });
 
-  // 2. Fetch Stations GeoJSON (with optional region or alert filters)
+  // 2. Fetch Independent River Webcams
+  const { data: webcamsData } = useQuery({
+    queryKey: ['webcams'],
+    queryFn: fetchWebcams,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const webcams = webcamsData?.features || [];
+  const webcamCount = webcamsData?.total_count || 0;
+
+  // 3. Fetch Stations GeoJSON (with optional region or alert filters)
   const { data: stationsData, isLoading } = useQuery({
     queryKey: ['stations', selectedRegion, selectedAlert],
     queryFn: () =>
@@ -40,7 +53,7 @@ const RiverMonitorDashboard: React.FC = () => {
   const stations = stationsData?.features || [];
   const totalStations = stationsData?.total_count || 0;
 
-  // Selected station feature details (includes webcam_url)
+  // Selected station feature details
   const selectedStationFeature = stations.find((s) => s.id === selectedStationId) || null;
 
   // Count stations currently exceeding thresholds
@@ -58,6 +71,9 @@ const RiverMonitorDashboard: React.FC = () => {
         onSelectRegion={setSelectedRegion}
         selectedAlert={selectedAlert}
         onSelectAlert={setSelectedAlert}
+        showWebcams={showWebcams}
+        onToggleWebcams={() => setShowWebcams((prev) => !prev)}
+        webcamCount={webcamCount}
         totalStations={totalStations}
         alertCount={alertCount}
       />
@@ -75,12 +91,20 @@ const RiverMonitorDashboard: React.FC = () => {
           stations={stations}
           selectedStationId={selectedStationId}
           onSelectStation={(id) => setSelectedStationId(id)}
+          webcams={webcams}
+          showWebcams={showWebcams}
+          onSelectWebcam={(wb) => setSelectedWebcam(wb)}
         />
 
         <StationSidebar
           stationId={selectedStationId}
           stationFeature={selectedStationFeature}
           onClose={() => setSelectedStationId(null)}
+        />
+
+        <WebcamModal
+          webcam={selectedWebcam}
+          onClose={() => setSelectedWebcam(null)}
         />
       </main>
     </div>

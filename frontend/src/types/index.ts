@@ -108,3 +108,35 @@ export interface RiverFeatureCollection {
   features: RiverFeature[];
   total_count: number;
 }
+
+// --- Independent River Webcams Types ---
+
+export type WebcamFeedType = 'jpeg_stream' | 'iframe' | 'link_esterno';
+
+export interface WebcamFluvialeProperties {
+  id: number;
+  nome: string;
+  corso_dacqua: string;
+  localita: string;
+  regione: string;
+  tipo_feed: WebcamFeedType;
+  url_feed: string | null;
+  url_web: string;
+  provider: string;
+  descrizione: string | null;
+  attiva: boolean;
+}
+
+export interface WebcamFeature {
+  type: 'Feature';
+  id: number;
+  geometry: GeoJSONPoint;
+  properties: WebcamFluvialeProperties;
+}
+
+export interface WebcamFeatureCollection {
+  type: 'FeatureCollection';
+  features: WebcamFeature[];
+  total_count: number;
+}
+

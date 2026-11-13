@@ -1,5 +1,5 @@
 import React from 'react';
-import { Waves, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Waves, AlertTriangle, CheckCircle2, ShieldAlert, Video } from 'lucide-react';
 import type { RegioneSummary, AlertLevel } from '../types';
 
 interface NavbarProps {
@@ -8,6 +8,9 @@ interface NavbarProps {
   onSelectRegion: (istat: string | null) => void;
   selectedAlert: AlertLevel | 'all';
   onSelectAlert: (alert: AlertLevel | 'all') => void;
+  showWebcams: boolean;
+  onToggleWebcams: () => void;
+  webcamCount: number;
   totalStations: number;
   alertCount: number;
 }
@@ -18,6 +21,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectRegion,
   selectedAlert,
   onSelectAlert,
+  showWebcams,
+  onToggleWebcams,
+  webcamCount,
   totalStations,
   alertCount,
 }) => {
@@ -40,8 +46,26 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Center/Right Filters: Region & Alert Level */}
+      {/* Center/Right Filters: Region, Webcams & Alert Level */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Toggle Webcam Layer Button */}
+        <button
+          onClick={onToggleWebcams}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+            showWebcams
+              ? 'bg-purple-600/30 text-purple-200 border-purple-500/50 shadow-lg shadow-purple-600/20'
+              : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+          }`}
+          title="Mostra/Nascondi layer webcam fluviali e ponti"
+        >
+          <Video className="w-3.5 h-3.5 text-purple-400" />
+          <span className="hidden sm:inline">Webcam Fiumi</span>
+          <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+            {webcamCount}
+          </span>
+          <span className={`w-1.5 h-1.5 rounded-full ${showWebcams ? 'bg-purple-400 animate-ping' : 'bg-slate-500'}`} />
+        </button>
+
         {/* Region Selector */}
         <select
           value={selectedRegion || ''}

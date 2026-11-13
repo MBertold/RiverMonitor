@@ -133,3 +133,34 @@ class TracciatoFiume(Base, TimestampMixin):
     def __repr__(self) -> str:
         return f"<TracciatoFiume(id={self.id}, nome='{self.nome}', km={self.lunghezza_km})>"
 
+
+class WebcamFluviale(Base, TimestampMixin):
+    """
+    Dimensione spaziale: Punti di osservazione video / Webcam fluviali indipendenti.
+    Webcam panoramiche su ponti storici, webcam meteo/turistiche, webcam civiche comunali
+    o punti di osservazione fluviale da circuiti indipendenti (SkylineWebcams, Reggio Emilia Meteo, Limet, Comuni).
+    """
+    __tablename__ = "webcam_fluviali"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nome: Mapped[str] = mapped_column(String(200), nullable=False)
+    corso_dacqua: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
+    localita: Mapped[str] = mapped_column(String(150), nullable=False)
+    regione: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
+    tipo_feed: Mapped[str] = mapped_column(String(50), nullable=False)  # 'jpeg_stream', 'iframe', 'link_esterno'
+    url_feed: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    url_web: Mapped[str] = mapped_column(String(500), nullable=False)
+    provider: Mapped[str] = mapped_column(String(100), nullable=False)
+    descrizione: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    attiva: Mapped[bool] = mapped_column(Boolean, default=True, index=True, nullable=False)
+
+    # Posizione geografica: punto (Longitudine, Latitudine) in EPSG:4326
+    posizione: Mapped[object] = mapped_column(
+        Geometry(geometry_type="POINT", srid=4326, spatial_index=True),
+        nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<WebcamFluviale(id={self.id}, nome='{self.nome}', fiume='{self.corso_dacqua}')>"
+
+

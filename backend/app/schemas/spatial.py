@@ -117,3 +117,36 @@ class RiverFeatureCollection(BaseModel):
     features: List[RiverFeature]
     total_count: int
 
+
+# --- Schemi Webcam Fluviali Indipendenti (GeoJSON RFC 7946) ---
+
+class WebcamFluvialeProperties(BaseModel):
+    id: int
+    nome: str
+    corso_dacqua: str
+    localita: str
+    regione: str
+    tipo_feed: str  # 'jpeg_stream', 'iframe', 'link_esterno'
+    url_feed: Optional[str] = None
+    url_web: str
+    provider: str
+    descrizione: Optional[str] = None
+    attiva: bool = True
+
+    class Config:
+        from_attributes = True
+
+
+class WebcamFeature(BaseModel):
+    type: str = "Feature"
+    id: int
+    geometry: GeoJSONPoint
+    properties: WebcamFluvialeProperties
+
+
+class WebcamFeatureCollection(BaseModel):
+    type: str = "FeatureCollection"
+    features: List[WebcamFeature]
+    total_count: int
+
+

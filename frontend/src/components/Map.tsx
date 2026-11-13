@@ -1,12 +1,16 @@
 import React from 'react';
-import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Marker, Tooltip } from 'react-leaflet';
+import L from 'leaflet';
 import type { LatLngBoundsExpression } from 'leaflet';
-import type { StazioneFeature, AlertLevel } from '../types';
+import type { StazioneFeature, AlertLevel, WebcamFeature } from '../types';
 
 interface MapProps {
   stations: StazioneFeature[];
   selectedStationId: number | null;
   onSelectStation: (id: number) => void;
+  webcams: WebcamFeature[];
+  showWebcams: boolean;
+  onSelectWebcam: (webcam: WebcamFeature) => void;
 }
 
 // Bounding box rigoroso circoscritto alla Repubblica Italiana
@@ -22,10 +26,35 @@ const ALERT_COLORS: Record<AlertLevel, { fill: string; stroke: string; label: st
   rosso: { fill: '#ef4444', stroke: '#991b1b', label: 'Allarme' },
 };
 
+// Custom DivIcon for independent river webcams
+const webcamIcon = L.divIcon({
+  className: 'custom-webcam-marker',
+  html: `<div style="
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #a855f7, #7e22ce);
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.6);
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  ">📷</div>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
+
 export const RiverMap: React.FC<MapProps> = ({
   stations,
   selectedStationId,
   onSelectStation,
+  webcams,
+  showWebcams,
+  onSelectWebcam,
 }) => {
   return (
     <div className="w-full h-full relative">
@@ -94,23 +123,58 @@ export const RiverMap: React.FC<MapProps> = ({
                       {style.label}
                     </span>
                   </div>
-                  {st.properties.webcam_url && (
-                    <div className="mt-1 pt-1 border-t border-slate-100 flex items-center gap-1 text-[10px] text-red-600 font-semibold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-                      Webcam Live attiva
-                    </div>
-                  )}
                 </div>
               </Tooltip>
             </CircleMarker>
           );
         })}
+
+        {/* Layer Webcam Fluviali Indipendenti (Marker con icona telecamera) */}
+        {showWebcams &&
+          webcams.map((wb) => {
+            const [lon, lat] = wb.geometry.coordinates;
+            return (
+              <Marker
+                key={`webcam-${wb.id}`}
+                position={[lat, lon]}
+                icon={webcamIcon}
+                eventHandlers={{
+                  click: (e) => {
+                    e.originalEvent.stopPropagation();
+                    onSelectWebcam(wb);
+                  },
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
+                  <div className="text-xs p-1 min-w-[180px]">
+                    <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[11px] uppercase mb-0.5">
+                      <span>📹 Webcam Fluviale</span>
+                      {wb.properties.tipo_feed === 'jpeg_stream' && (
+                        <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.2 rounded font-semibold">
+                          Live Feed
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-bold text-slate-900 text-sm leading-snug">{wb.properties.nome}</p>
+                    <p className="text-slate-600 mt-1">
+                      Corso d'acqua:{' '}
+                      <span className="font-semibold text-slate-800">{wb.properties.corso_dacqua}</span>
+                    </p>
+                    <p className="text-slate-600">
+                      Località: <span className="font-semibold text-slate-800">{wb.properties.localita}</span>
+                    </p>
+                    <p className="text-[10px] text-purple-600 mt-1.5 font-bold">Clicca per aprire la diretta</p>
+                  </div>
+                </Tooltip>
+              </Marker>
+            );
+          })}
       </MapContainer>
 
       {/* Floating Info & Legend */}
       <div className="absolute bottom-6 left-6 z-[1000] bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-3 shadow-2xl text-xs text-slate-300">
         <div className="flex items-center justify-between gap-4 mb-2 pb-1.5 border-b border-slate-800">
-          <p className="font-semibold text-slate-200">Legenda Idrometrica</p>
+          <p className="font-semibold text-slate-200">Legenda Mappa</p>
           <span className="text-[10px] text-slate-400">Solo Italia</span>
         </div>
         <div className="space-y-1.5">
@@ -130,6 +194,14 @@ export const RiverMap: React.FC<MapProps> = ({
             <span className="w-3 h-3 rounded-full bg-red-500 shadow-sm animate-pulse" />
             <span>Allarme (Rosso)</span>
           </div>
+          {showWebcams && (
+            <div className="flex items-center gap-2 pt-1 border-t border-slate-800 text-purple-300">
+              <span className="w-3.5 h-3.5 rounded-full bg-purple-500 flex items-center justify-center text-[8px] text-white">
+                📷
+              </span>
+              <span>Webcam Fluviali ({webcams.length})</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

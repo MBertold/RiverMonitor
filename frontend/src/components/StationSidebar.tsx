@@ -367,12 +367,13 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center text-center p-8 bg-slate-950/40 border border-dashed border-slate-800 rounded-2xl">
-              <div className="w-14 h-14 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-center text-slate-500 mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-4">
                 <Video className="w-7 h-7" />
               </div>
-              <h3 className="text-base font-bold text-white mb-1">Nessuna Webcam Diretta Associata</h3>
+              <h3 className="text-base font-bold text-white mb-1">Nessuna Telecamera in questo Idrometro</h3>
               <p className="text-xs text-slate-400 max-w-sm mb-4 leading-relaxed">
-                Questo idrometro trasmette attualmente solo telemetria di livello e portata.
+                Questo sensore trasmette telemetria idrometrica di livello e portata. Le telecamere e le dirette streaming
+                sui corsi d'acqua sono disponibili nel layer dedicato <span className="text-purple-300 font-semibold">Webcam Fiumi 📷</span> sulla mappa.
               </p>
             </div>
           )}
