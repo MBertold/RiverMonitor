@@ -56,4 +56,5 @@ def init_db() -> None:
     with sync_engine.begin() as conn:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
         Base.metadata.create_all(bind=conn)
+        conn.execute(text("ALTER TABLE stazioni ADD COLUMN IF NOT EXISTS webcam_url VARCHAR(500);"))
     logger.info("Database initialized successfully.")

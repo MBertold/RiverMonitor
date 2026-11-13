@@ -1,5 +1,5 @@
 from app.models.base import Base, TimestampMixin
-from app.models.spatial import Regione, BacinoIdrografico, Stazione
+from app.models.spatial import Regione, BacinoIdrografico, Stazione, TracciatoFiume
 from app.models.measurement import Misurazione
 
 __all__ = [
@@ -8,5 +8,6 @@ __all__ = [
     "Regione",
     "BacinoIdrografico",
     "Stazione",
+    "TracciatoFiume",
     "Misurazione",
 ]

@@ -41,6 +41,7 @@ class StazioneBase(BaseModel):
     soglia_allerta_rossa: Optional[float] = Field(None, example=5.5)
     fonte_dati: str = Field(..., example="ARPA Piemonte")
     attiva: bool = True
+    webcam_url: Optional[str] = Field(None, example="https://www.youtube.com/embed/live_stream?channel=...")
 
 
 class StazioneCreate(StazioneBase):
@@ -86,3 +87,33 @@ class GeoJSONFeatureCollection(BaseModel):
     type: str = "FeatureCollection"
     features: List[GeoJSONFeature]
     total_count: int
+
+
+# --- Schemi Tracciati Fiumi (LineString GeoJSON RFC 7946) ---
+
+class RiverProperties(BaseModel):
+    id: int
+    nome: str
+    lunghezza_km: Optional[float] = None
+    bacino_nome: Optional[str] = None
+    regioni_attraversate: Optional[str] = None
+    stazioni_attive: int = 0
+
+
+class GeoJSONLineString(BaseModel):
+    type: str = "LineString"
+    coordinates: List[List[float]] = Field(..., example=[[7.05, 44.70], [7.69, 45.05]])
+
+
+class RiverFeature(BaseModel):
+    type: str = "Feature"
+    id: int
+    geometry: GeoJSONLineString
+    properties: RiverProperties
+
+
+class RiverFeatureCollection(BaseModel):
+    type: str = "FeatureCollection"
+    features: List[RiverFeature]
+    total_count: int
+

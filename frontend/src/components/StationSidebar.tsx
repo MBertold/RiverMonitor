@@ -8,7 +8,11 @@ import {
   Activity,
   Layers,
   MapPin,
-  AlertCircle
+  AlertCircle,
+  Video,
+  LineChart as ChartIcon,
+  ExternalLink,
+  Navigation,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -21,23 +25,35 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { fetchStationTimeSeries } from '../services/api';
+import type { StazioneFeature } from '../types';
 
 interface StationSidebarProps {
   stationId: number | null;
+  stationFeature?: StazioneFeature | null;
   onClose: () => void;
+  onSelectRiver: (riverName: string) => void;
 }
 
-export const StationSidebar: React.FC<StationSidebarProps> = ({ stationId, onClose }) => {
+export const StationSidebar: React.FC<StationSidebarProps> = ({
+  stationId,
+  stationFeature,
+  onClose,
+  onSelectRiver,
+}) => {
   const [hours, setHours] = useState<number>(48);
+  const [activeTab, setActiveTab] = useState<'grafico' | 'webcam'>('grafico');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['station-timeseries', stationId, hours],
     queryFn: () => (stationId ? fetchStationTimeSeries(stationId, hours) : null),
     enabled: !!stationId,
-    refetchInterval: 30000, // refresh every 30s
+    refetchInterval: 30000,
   });
 
   if (!stationId) return null;
+
+  const webcamUrl = stationFeature?.properties.webcam_url;
+  const fiumeNome = data?.fiume || stationFeature?.properties.fiume;
 
   // Format timestamp for chart XAxis
   const chartData = data?.serie_storica.map((item) => {
@@ -60,17 +76,33 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({ stationId, onClo
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono uppercase bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">
-              {data?.codice_stazione || 'CARICAMENTO...'}
+              {data?.codice_stazione || stationFeature?.properties.codice_stazione || 'STAZIONE'}
             </span>
             <span className="text-xs text-slate-400 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-slate-500" />
-              {data?.regione || ''}
+              {data?.regione || stationFeature?.properties.regione_nome || ''}
             </span>
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">{data?.nome || 'Dettaglio Stazione'}</h2>
-          <p className="text-sm text-slate-400">
-            Corso d'acqua: <span className="text-slate-200 font-medium">{data?.fiume || 'N/D'}</span>
-          </p>
+
+          <h2 className="text-lg font-bold text-white tracking-tight">
+            {data?.nome || stationFeature?.properties.nome || 'Dettaglio Stazione'}
+          </h2>
+
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-slate-400">Fiume:</span>
+            {fiumeNome ? (
+              <button
+                onClick={() => onSelectRiver(fiumeNome)}
+                className="text-xs font-semibold text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 px-2 py-0.5 rounded border border-sky-500/30 flex items-center gap-1 transition-colors"
+                title={`Evidenzia tutto il tracciato del fiume ${fiumeNome} sulla mappa`}
+              >
+                <Navigation className="w-3 h-3 rotate-45" />
+                {fiumeNome} (Evidenzia tracciato)
+              </button>
+            ) : (
+              <span className="text-xs text-slate-300">N/D</span>
+            )}
+          </div>
         </div>
 
         <button
@@ -82,21 +114,51 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({ stationId, onClo
         </button>
       </div>
 
-      {isLoading && (
+      {/* Tabs Switcher: Idrogramma vs Webcam Live */}
+      <div className="flex border-b border-slate-800 px-5 pt-2 bg-slate-950/20">
+        <button
+          onClick={() => setActiveTab('grafico')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
+            activeTab === 'grafico'
+              ? 'border-blue-500 text-blue-400'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <ChartIcon className="w-3.5 h-3.5" />
+          Idrogramma & Serie Storica
+        </button>
+        <button
+          onClick={() => setActiveTab('webcam')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all relative ${
+            activeTab === 'webcam'
+              ? 'border-red-500 text-red-400'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Video className="w-3.5 h-3.5" />
+          Webcam Live
+          {webcamUrl && (
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping absolute -top-0.5 right-2" />
+          )}
+        </button>
+      </div>
+
+      {isLoading && activeTab === 'grafico' && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-400">
           <Activity className="w-8 h-8 animate-spin text-blue-500 mb-3" />
           <p className="text-sm">Caricamento serie idrometrica in tempo reale...</p>
         </div>
       )}
 
-      {error && (
+      {error && activeTab === 'grafico' && (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-red-400 text-center">
           <AlertCircle className="w-8 h-8 mb-2" />
           <p className="text-sm">Impossibile recuperare i dati della stazione.</p>
         </div>
       )}
 
-      {data && !isLoading && (
+      {/* TAB 1: IDROGRAMMA & METRICHE */}
+      {activeTab === 'grafico' && data && !isLoading && (
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Key Metric Cards */}
           <div className="grid grid-cols-3 gap-3">
@@ -195,7 +257,6 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({ stationId, onClo
                     labelStyle={{ color: '#cbd5e1', fontWeight: 600 }}
                   />
 
-                  {/* Soglie Idrometriche di Allerta */}
                   {data.soglie.gialla && (
                     <ReferenceLine
                       y={data.soglie.gialla}
@@ -221,7 +282,6 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({ stationId, onClo
                     />
                   )}
 
-                  {/* Curva del Livello Idrometrico */}
                   <Line
                     type="monotone"
                     dataKey="livello"
@@ -236,7 +296,7 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({ stationId, onClo
             </div>
           </div>
 
-          {/* Thresholds Table */}
+          {/* Official Thresholds Table */}
           <div className="bg-slate-800/40 border border-slate-800 rounded-xl p-4 space-y-2">
             <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-slate-400" />
@@ -263,6 +323,83 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({ stationId, onClo
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB 2: WEBCAM LIVE STREAMING */}
+      {activeTab === 'webcam' && (
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {webcamUrl ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-red-400">
+                    Trasmissione Live Fluviale
+                  </span>
+                </div>
+                <span className="text-xs text-slate-400">{data?.nome || 'Stazione'}</span>
+              </div>
+
+              {/* Player Container */}
+              <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-slate-700/80 shadow-2xl relative">
+                {webcamUrl.endsWith('.jpg') || webcamUrl.endsWith('.jpeg') ? (
+                  <img
+                    src={`${webcamUrl}?t=${Date.now()}`}
+                    alt="Webcam Idrometrica Live"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <iframe
+                    src={webcamUrl}
+                    title="Live River Webcam"
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                )}
+              </div>
+
+              <div className="bg-slate-800/40 border border-slate-800 rounded-xl p-4 text-xs text-slate-300 space-y-2">
+                <p className="font-semibold text-white flex items-center gap-1.5">
+                  <Video className="w-4 h-4 text-sky-400" />
+                  Dettagli Flusso Video
+                </p>
+                <p className="text-slate-400 leading-relaxed">
+                  Webcam ottica ad alta risoluzione puntata sulla sezione fluviale di misura per la verifica visiva
+                  immediata dell'onda di piena, detriti flottanti e deflusso sotto le campate dei ponti.
+                </p>
+                <a
+                  href={webcamUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-medium pt-1"
+                >
+                  <span>Apri flusso sorgente a schermo intero</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center p-8 bg-slate-950/40 border border-dashed border-slate-800 rounded-2xl">
+              <div className="w-14 h-14 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-center text-slate-500 mb-4">
+                <Video className="w-7 h-7" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-1">Nessuna Webcam Diretta Associata</h3>
+              <p className="text-xs text-slate-400 max-w-sm mb-4 leading-relaxed">
+                Questo idrometro trasmette attualmente solo telemetria di livello e portata. È possibile connettere
+                flussi video da telecamere IP (RTSP/HLS), telecamere di monitoraggio della Protezione Civile o l'API
+                globale di Windy Webcams.
+              </p>
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-left w-full text-xs text-blue-300">
+                <p className="font-semibold text-blue-200 mb-1">💡 Integrazione Webcam Disponibile:</p>
+                <p className="text-[11px] text-blue-300/90">
+                  I fiumi principali (Po a Torino, Arno a Firenze, Tevere a Roma, Ticino a Pavia, Adige a Verona,
+                  Tagliamento a Latisana, Volturno) hanno già webcam live dimostrative collegate.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </aside>

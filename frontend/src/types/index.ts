@@ -18,6 +18,7 @@ export interface StazioneProperties {
   soglia_allerta_rossa: number | null;
   fonte_dati: string;
   attiva: boolean;
+  webcam_url?: string | null;
   regione_nome: string | null;
   bacino_nome: string | null;
   ultima_misurazione: UltimaMisurazione | null;
@@ -77,4 +78,33 @@ export interface RegioneSummary {
   nome: string;
   totale_stazioni: number;
   stazioni_in_allerta: number;
+}
+
+// --- River LineString GeoJSON Types ---
+
+export interface RiverProperties {
+  id: number;
+  nome: string;
+  lunghezza_km: number | null;
+  bacino_nome: string | null;
+  regioni_attraversate: string | null;
+  stazioni_attive: number;
+}
+
+export interface GeoJSONLineString {
+  type: 'LineString';
+  coordinates: [number, number][]; // [[lon, lat], ...]
+}
+
+export interface RiverFeature {
+  type: 'Feature';
+  id: number;
+  geometry: GeoJSONLineString;
+  properties: RiverProperties;
+}
+
+export interface RiverFeatureCollection {
+  type: 'FeatureCollection';
+  features: RiverFeature[];
+  total_count: number;
 }

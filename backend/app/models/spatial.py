@@ -94,6 +94,9 @@ class Stazione(Base, TimestampMixin):
     fonte_dati: Mapped[str] = mapped_column(String(100), nullable=False, default="ARPA")
     attiva: Mapped[bool] = mapped_column(Boolean, default=True, index=True, nullable=False)
 
+    # URL feed webcam live (video stream HLS/m3u8, snapshot JPEG o embed player)
+    webcam_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+
     # Relazioni
     regione: Mapped[Optional["Regione"]] = relationship("Regione", back_populates="stazioni")
     bacino: Mapped[Optional["BacinoIdrografico"]] = relationship("BacinoIdrografico", back_populates="stazioni")
@@ -106,3 +109,27 @@ class Stazione(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<Stazione(id={self.id}, codice='{self.codice_stazione}', nome='{self.nome}', fiume='{self.fiume}')>"
+
+
+class TracciatoFiume(Base, TimestampMixin):
+    """
+    Dimensione spaziale: Geometria vettoriale del tracciato fluviale (LineString in EPSG:4326).
+    Consente di visualizzare ed evidenziare l'intero corso del fiume dalla sorgente alla foce sulla mappa.
+    """
+    __tablename__ = "tracciati_fiumi"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nome: Mapped[str] = mapped_column(String(150), unique=True, index=True, nullable=False)
+    lunghezza_km: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    bacino_nome: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
+    regioni_attraversate: Mapped[Optional[str]] = mapped_column(String(250), nullable=True)
+
+    # LineString con le coordinate del corso d'acqua
+    geometria: Mapped[object] = mapped_column(
+        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
+        nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<TracciatoFiume(id={self.id}, nome='{self.nome}', km={self.lunghezza_km})>"
+

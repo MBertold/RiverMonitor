@@ -1,4 +1,4 @@
-import type { FeatureCollectionStazioni, StationTimeSeries, RegioneSummary } from '../types';
+import type { FeatureCollectionStazioni, StationTimeSeries, RegioneSummary, RiverFeatureCollection } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -36,6 +36,14 @@ export async function fetchRegions(): Promise<RegioneSummary[]> {
   const response = await fetch(`${BASE_URL}/regions`);
   if (!response.ok) {
     throw new Error(`Errore durante il recupero delle regioni: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function fetchRiversGeoJSON(): Promise<RiverFeatureCollection> {
+  const response = await fetch(`${BASE_URL}/rivers/geojson`);
+  if (!response.ok) {
+    throw new Error(`Errore durante il recupero dei tracciati fluviali: ${response.statusText}`);
   }
   return response.json();
 }

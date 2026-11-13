@@ -104,6 +104,7 @@ async def get_stations_geojson(
         s.soglia_allerta_rossa,
         s.fonte_dati,
         s.attiva,
+        s.webcam_url,
         ST_X(s.posizione) AS lon,
         ST_Y(s.posizione) AS lat,
         r.nome AS regione_nome,
@@ -163,6 +164,7 @@ async def get_stations_geojson(
             soglia_allerta_rossa=row["soglia_allerta_rossa"],
             fonte_dati=row["fonte_dati"],
             attiva=row["attiva"],
+            webcam_url=row["webcam_url"],
             regione_nome=row["regione_nome"],
             bacino_nome=row["bacino_nome"],
             ultima_misurazione=ultima_misurazione
@@ -201,6 +203,7 @@ async def get_station_by_id(station_id: int, db: AsyncSession = Depends(get_db))
         s.soglia_allerta_rossa,
         s.fonte_dati,
         s.attiva,
+        s.webcam_url,
         ST_X(s.posizione) AS lon,
         ST_Y(s.posizione) AS lat,
         r.nome AS regione_nome,
@@ -258,6 +261,7 @@ async def get_station_by_id(station_id: int, db: AsyncSession = Depends(get_db))
         soglia_allerta_rossa=row["soglia_allerta_rossa"],
         fonte_dati=row["fonte_dati"],
         attiva=row["attiva"],
+        webcam_url=row["webcam_url"],
         regione_nome=row["regione_nome"],
         bacino_nome=row["bacino_nome"],
         ultima_misurazione=ultima_misurazione
