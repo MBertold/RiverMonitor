@@ -1,0 +1,81 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: rivermonitor-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rivermonitor}
+      POSTGRES_USER: ${POSTGRES_USER:-riveruser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-riverpassword}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-riveruser} -d ${POSTGRES_DB:-rivermonitor}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rivermonitor-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rivermonitor-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rivermonitor-net
+
+  etl-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rivermonitor-etl
+    restart: unless-stopped
+    command: ["python", "-m", "etl.worker", "--interval", "900"]
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rivermonitor-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rivermonitor-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - rivermonitor-net
+
+volumes:
+  postgres_data:
+    name: rivermonitor_postgres_data
+
+networks:
+  rivermonitor-net:
+    name: rivermonitor_network
+    driver: bridge
