@@ -1,5 +1,5 @@
 import React from 'react';
-import { Waves, AlertTriangle, CheckCircle2, ShieldAlert, X } from 'lucide-react';
+import { Waves, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
 import type { RegioneSummary, AlertLevel } from '../types';
 
 interface NavbarProps {
@@ -8,8 +8,6 @@ interface NavbarProps {
   onSelectRegion: (istat: string | null) => void;
   selectedAlert: AlertLevel | 'all';
   onSelectAlert: (alert: AlertLevel | 'all') => void;
-  selectedRiver: string | null;
-  onSelectRiver: (river: string | null) => void;
   totalStations: number;
   alertCount: number;
 }
@@ -20,8 +18,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectRegion,
   selectedAlert,
   onSelectAlert,
-  selectedRiver,
-  onSelectRiver,
   totalStations,
   alertCount,
 }) => {
@@ -40,26 +36,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               Live Italia
             </span>
           </div>
-          <p className="text-xs text-slate-400 hidden sm:block">Monitoraggio Idrometrico & Tracciati Fluviali</p>
+          <p className="text-xs text-slate-400 hidden sm:block">Monitoraggio Idrometrico Fiumi Italiani</p>
         </div>
       </div>
 
-      {/* Center/Right Filters: Region, River Highlight & Alert Level */}
+      {/* Center/Right Filters: Region & Alert Level */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Active River Highlight Badge */}
-        {selectedRiver && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-500/20 border border-sky-500/40 text-sky-300 rounded-lg text-xs font-semibold animate-fadeIn">
-            <span>Tracciato: {selectedRiver}</span>
-            <button
-              onClick={() => onSelectRiver(null)}
-              className="p-0.5 hover:text-white hover:bg-sky-500/30 rounded transition-colors"
-              title="Rimuovi evidenziazione tracciato"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
         {/* Region Selector */}
         <select
           value={selectedRegion || ''}

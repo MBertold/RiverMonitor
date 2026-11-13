@@ -1,15 +1,12 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip, useMap } from 'react-leaflet';
+import React from 'react';
+import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
 import type { LatLngBoundsExpression } from 'leaflet';
-import type { StazioneFeature, AlertLevel, RiverFeature } from '../types';
+import type { StazioneFeature, AlertLevel } from '../types';
 
 interface MapProps {
   stations: StazioneFeature[];
-  rivers: RiverFeature[];
   selectedStationId: number | null;
   onSelectStation: (id: number) => void;
-  selectedRiver: string | null;
-  onSelectRiver: (riverName: string | null) => void;
 }
 
 // Bounding box rigoroso circoscritto alla Repubblica Italiana
@@ -25,32 +22,10 @@ const ALERT_COLORS: Record<AlertLevel, { fill: string; stroke: string; label: st
   rosso: { fill: '#ef4444', stroke: '#991b1b', label: 'Allarme' },
 };
 
-// Componente helper per gestire zoom e centratura dinamica
-const MapController: React.FC<{
-  selectedRiver: string | null;
-  rivers: RiverFeature[];
-}> = ({ selectedRiver, rivers }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!selectedRiver) return;
-    const river = rivers.find((r) => r.properties.nome.toLowerCase() === selectedRiver.toLowerCase());
-    if (river && river.geometry.coordinates.length > 0) {
-      const latLngs = river.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number]);
-      map.fitBounds(latLngs, { padding: [60, 60], maxZoom: 10, animate: true });
-    }
-  }, [selectedRiver, rivers, map]);
-
-  return null;
-};
-
 export const RiverMap: React.FC<MapProps> = ({
   stations,
-  rivers,
   selectedStationId,
   onSelectStation,
-  selectedRiver,
-  onSelectRiver,
 }) => {
   return (
     <div className="w-full h-full relative">
@@ -64,8 +39,6 @@ export const RiverMap: React.FC<MapProps> = ({
         scrollWheelZoom={true}
         className="w-full h-full"
       >
-        <MapController selectedRiver={selectedRiver} rivers={rivers} />
-
         {/* Layer Cartografico OpenStreetMap (100% Free & Open) */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
@@ -73,73 +46,23 @@ export const RiverMap: React.FC<MapProps> = ({
           maxZoom={19}
         />
 
-        {/* Tracciati Vettoriali dei Fiumi (LineString) */}
-        {rivers.map((river) => {
-          const latLngs = river.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number]);
-          const isSelected = selectedRiver?.toLowerCase() === river.properties.nome.toLowerCase();
-
-          return (
-            <Polyline
-              key={`river-${river.id}`}
-              positions={latLngs}
-              pathOptions={{
-                color: isSelected ? '#0284c7' : '#0284c7',
-                weight: isSelected ? 6.5 : 3.0,
-                opacity: isSelected ? 1.0 : 0.65,
-                lineCap: 'round',
-                lineJoin: 'round',
-                dashArray: isSelected ? undefined : undefined,
-              }}
-              eventHandlers={{
-                click: (e) => {
-                  e.originalEvent.stopPropagation();
-                  onSelectRiver(isSelected ? null : river.properties.nome);
-                },
-              }}
-            >
-              <Tooltip direction="top" offset={[0, -5]} opacity={0.95}>
-                <div className="text-xs p-1">
-                  <div className="flex items-center gap-1.5 font-bold text-sky-900 text-sm">
-                    <span>Fiume {river.properties.nome}</span>
-                    {river.properties.lunghezza_km && (
-                      <span className="text-[10px] font-normal text-slate-500">
-                        (~{river.properties.lunghezza_km} km)
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-600 mt-0.5">
-                    Regioni: <span className="text-slate-800">{river.properties.regioni_attraversate || 'N/D'}</span>
-                  </p>
-                  <p className="text-[10px] text-sky-600 font-medium mt-1">
-                    {isSelected ? '✓ Tracciato evidenziato (clicca per deselezionare)' : '👉 Clicca per evidenziare il tracciato'}
-                  </p>
-                </div>
-              </Tooltip>
-            </Polyline>
-          );
-        })}
-
         {/* Stazioni Idrometriche Georeferenziate (CircleMarker) */}
         {stations.map((st) => {
           const [lon, lat] = st.geometry.coordinates;
           const status = st.properties.ultima_misurazione?.stato_allerta || 'verde';
           const style = ALERT_COLORS[status];
           const isSelected = selectedStationId === st.id;
-          const isStationOnSelectedRiver =
-            selectedRiver && st.properties.fiume?.toLowerCase() === selectedRiver.toLowerCase();
 
           return (
             <CircleMarker
               key={`station-${st.id}`}
               center={[lat, lon]}
-              radius={
-                isSelected ? 12 : (isStationOnSelectedRiver ? 10 : (status === 'rosso' || status === 'arancione' ? 9 : 7))
-              }
+              radius={isSelected ? 12 : (status === 'rosso' || status === 'arancione' ? 9 : 7)}
               pathOptions={{
                 fillColor: style.fill,
-                fillOpacity: isSelected || isStationOnSelectedRiver ? 1 : 0.85,
-                color: isSelected ? '#ffffff' : (isStationOnSelectedRiver ? '#0284c7' : style.stroke),
-                weight: isSelected ? 3.5 : (isStationOnSelectedRiver ? 2.5 : 1.5),
+                fillOpacity: isSelected ? 1 : 0.85,
+                color: isSelected ? '#ffffff' : style.stroke,
+                weight: isSelected ? 3.5 : 1.5,
               }}
               eventHandlers={{
                 click: (e) => {
@@ -152,7 +75,7 @@ export const RiverMap: React.FC<MapProps> = ({
                 <div className="text-xs p-1 min-w-[170px]">
                   <p className="font-bold text-slate-900 text-sm">{st.properties.nome}</p>
                   <p className="text-slate-600 mb-1">
-                    Fiume: <span className="font-semibold text-sky-700">{st.properties.fiume || 'N/D'}</span>
+                    Fiume: <span className="font-semibold text-slate-800">{st.properties.fiume || 'N/D'}</span>
                   </p>
                   <div className="flex items-center justify-between border-t border-slate-200 pt-1 mt-1">
                     <span className="text-slate-600">Livello attuale:</span>
@@ -206,10 +129,6 @@ export const RiverMap: React.FC<MapProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-red-500 shadow-sm animate-pulse" />
             <span>Allarme (Rosso)</span>
-          </div>
-          <div className="flex items-center gap-2 pt-1 border-t border-slate-800/80">
-            <span className="w-5 h-1 rounded bg-sky-500" />
-            <span>Tracciato Fiume (cliccabile)</span>
           </div>
         </div>
       </div>

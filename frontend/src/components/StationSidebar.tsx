@@ -12,7 +12,6 @@ import {
   Video,
   LineChart as ChartIcon,
   ExternalLink,
-  Navigation,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -31,14 +30,12 @@ interface StationSidebarProps {
   stationId: number | null;
   stationFeature?: StazioneFeature | null;
   onClose: () => void;
-  onSelectRiver: (riverName: string) => void;
 }
 
 export const StationSidebar: React.FC<StationSidebarProps> = ({
   stationId,
   stationFeature,
   onClose,
-  onSelectRiver,
 }) => {
   const [hours, setHours] = useState<number>(48);
   const [activeTab, setActiveTab] = useState<'grafico' | 'webcam'>('grafico');
@@ -88,21 +85,9 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({
             {data?.nome || stationFeature?.properties.nome || 'Dettaglio Stazione'}
           </h2>
 
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-slate-400">Fiume:</span>
-            {fiumeNome ? (
-              <button
-                onClick={() => onSelectRiver(fiumeNome)}
-                className="text-xs font-semibold text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 px-2 py-0.5 rounded border border-sky-500/30 flex items-center gap-1 transition-colors"
-                title={`Evidenzia tutto il tracciato del fiume ${fiumeNome} sulla mappa`}
-              >
-                <Navigation className="w-3 h-3 rotate-45" />
-                {fiumeNome} (Evidenzia tracciato)
-              </button>
-            ) : (
-              <span className="text-xs text-slate-300">N/D</span>
-            )}
-          </div>
+          <p className="text-sm text-slate-400 mt-1">
+            Corso d'acqua: <span className="text-slate-100 font-semibold">{fiumeNome || 'N/D'}</span>
+          </p>
         </div>
 
         <button
@@ -387,17 +372,8 @@ export const StationSidebar: React.FC<StationSidebarProps> = ({
               </div>
               <h3 className="text-base font-bold text-white mb-1">Nessuna Webcam Diretta Associata</h3>
               <p className="text-xs text-slate-400 max-w-sm mb-4 leading-relaxed">
-                Questo idrometro trasmette attualmente solo telemetria di livello e portata. È possibile connettere
-                flussi video da telecamere IP (RTSP/HLS), telecamere di monitoraggio della Protezione Civile o l'API
-                globale di Windy Webcams.
+                Questo idrometro trasmette attualmente solo telemetria di livello e portata.
               </p>
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-left w-full text-xs text-blue-300">
-                <p className="font-semibold text-blue-200 mb-1">💡 Integrazione Webcam Disponibile:</p>
-                <p className="text-[11px] text-blue-300/90">
-                  I fiumi principali (Po a Torino, Arno a Firenze, Tevere a Roma, Ticino a Pavia, Adige a Verona,
-                  Tagliamento a Latisana, Volturno) hanno già webcam live dimostrative collegate.
-                </p>
-              </div>
             </div>
           )}
         </div>
